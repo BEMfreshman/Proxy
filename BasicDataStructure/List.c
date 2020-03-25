@@ -116,16 +116,50 @@ node* getat(list lt,size_t n, int newalloc)
     }
 }
 
-void popat(list lt, size_t n) {
+node* popat2(list lt, node* nd) {
+    node* tmp = NULL;
+    size_t counter = 0;
+    while (lt->getnext(lt, tmp)) {
+        if (tmp != nd) {
+            counter++;
+        }
+        else {
+            return popat(lt, counter);
+        }
+    }
+
+    return NULL;
+}
+
+node* popat(list lt, size_t n) {
     node* nd = getat(lt,n,0);
     if (nd == NULL) return;
 
-    nd->prev->next = nd->next;
-    nd->next->prev = nd->prev;
+    if (lt->length == 1) {
+        lt->first = NULL;
+        lt->last = NULL;
+    }
+
+    if (n == 0) {
+        //pop first
+        lt->first = lt->first->next;
+        nd->next->prev = NULL;
+    }
+    else if (n == lt->length - 1) {
+        //pop last
+        lt->last = lt->last->prev;
+        nd->prev->next = NULL;
+    }
+    else {
+        nd->prev->next = nd->next;
+        nd->next->prev = nd->prev;
+    }
 
     nd->next = NULL;
     nd->prev = NULL;
+    
+    lt->length--;
 
-    free(nd);
+    return nd;
 }
 

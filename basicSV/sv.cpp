@@ -1,5 +1,4 @@
 ﻿#include "sv.h"
-//#include <argtable2.h>
 
 
 client* create_client()
@@ -11,8 +10,76 @@ client* create_client()
 }
 
 void free_client(client* cli) {
+    if (cli == NULL) return;
     uv_close((uv_handle_t*)cli->tcp_client, on_close);
     free(cli);
+}
+
+client* getclient(ser* server, uv_tcp_t* tcp_client) {
+    if (server == NULL) return NULL;
+    list<client*> lt = server->cli_list;
+    for (list<client*>::iterator it = lt.begin();
+        it != lt.end();
+        it++) {
+        if ((*it)->tcp_client == tcp_client) {
+            return *it;
+        }
+    }
+
+    return NULL;
+}
+
+void add_client(ser* server, client* cli) {
+    server->cli_list.push_back(cli);
+}
+
+client* get_client(ser* server, size_t index) {
+    list<client*> lt = server->cli_list;
+    int counter = 0;
+    for (list<client*>::iterator it = lt.begin();
+        it != lt.end();
+        it++) {
+        if (counter != index) {
+            counter++;
+        }
+        else {
+            return *it;
+        }
+    }
+
+    return NULL;
+}
+
+void pop_client(ser* server, int index) {
+    list<client*> lt = server->cli_list;
+    int counter = 0;
+    for (list<client*>::iterator it = lt.begin();
+        it != lt.end();
+        it++) {
+        if (counter != index) {
+            counter++;
+        }
+        else {
+            client* tmp = *it;
+            it = lt.erase(it);
+            free_client(tmp);
+        }
+    }
+}
+
+void pop_client2(ser* server, client* cli) {
+
+    list<client*> lt = server->cli_list;
+    int counter = 0;
+    for (list<client*>::iterator it = lt.begin();
+        it != lt.end();
+        it++) {
+        if (cli == *it) {
+            client* tmp = *it;
+            it = lt.erase(it);
+            free_client(tmp);
+        }
+    }
 }
 
 void on_close(uv_handle_t* handle){
@@ -29,7 +96,6 @@ void clear_server(ser* server) {
 ser* create_server() {
     
     ser* server = (ser*)malloc(sizeof(ser));
-    server->cli_list = NULL;
     server->tcp_server = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
     uv_tcp_init(uv_default_loop(), server->tcp_server);
     return server;
@@ -43,31 +109,16 @@ void free_server(ser* server){
 }
 
 
-
-
 void clear_cli_list(ser* server) {
-    /*list<client*>::iterator it;
-    for (it = server->cli_list.begin(); it != server->cli_list.end(); it++) {
+    list<client*> lt = server->cli_list;
+    for (list<client*>::iterator it = lt.begin();
+        it != lt.end();
+        it++) {
         if (*it != NULL) {
-            freeclient(*it);
+            free_client(*it);
         }
     }
-    server->cli_list.clear();*/
-    /*qlist_obj_t* p_obj = NULL;
-    while (server->cli_list->getnext(server->cli_list, p_obj, false) == true) {
-        if (p_obj != NULL) {
-            freeclient((client*)p_obj);
-        }
-    }*/
-
-    node* nd = NULL;
-    while (server->cli_list->getnext(server->cli_list, nd)) {
-        client* cli = (client*)nd->data;
-        uv_close((uv_handle_t*)cli->tcp_client,on_close);
-        free(cli);
-        nd->data = NULL;
-    }
-    freelist(server->cli_list);
+    server->cli_list.clear();
 }
 
 //
@@ -119,28 +170,4 @@ void clear_cli_list(ser* server) {
 //}
 //
 //
-//void on_connection(uv_stream_t* tcp_server, int status)
-//{
-//    // build connection;
-//    if (status == -1) {
-//        fprintf(stderr, "Failed to build new connection");
-//        return;
-//    }
 //
-//
-//    
-//    
-//    client* cli = newclient();
-//    if (uv_accept(tcp_server, (uv_stream_t*)cli->tcp_client) == 0) {
-//        // connect to new client has been built
-//        server->cli_list->addfirst(server->cli_list,cli,sizeof(client));
-//
-//        // Todo:read data 
-//    }
-//    else {
-//        freeclient(cli);
-//    }
-//    
-//    
-//
-//}

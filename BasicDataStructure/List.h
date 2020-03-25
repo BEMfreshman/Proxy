@@ -35,4 +35,5 @@ void reset(list lt);
 void appendnode(list lt,void* data,size_t sizeofdt);
 void addheadnode(list lt,void* data,size_t sizeofdt);
 node* getat(list lt,size_t n,int newalloc);
-void popat(list lt,size_t n);
+node* popat(list lt,size_t n);
+node* popat2(list lt, node* nd);
