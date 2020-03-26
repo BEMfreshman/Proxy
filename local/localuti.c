@@ -2,22 +2,23 @@
 #include "sv.h"
 void on_connection(uv_stream_t* tcp_server, int status)
 {
-    extern ser* localss;
+    extern GList* lcllist;
     // build connection;
     if (status == -1) {
         fprintf(stderr, "Failed to build new connection");
         return;
     }
 
-    client* cli = create_client();
-    if (uv_accept(tcp_server, (uv_stream_t*)cli->tcp_client) == 0) {
+    node* local = create_node();
+    if (uv_accept(tcp_server, (uv_stream_t*)local->tcp_node) == 0) {
         // connect to new client has been built
-        localss->cli_list.push_back(cli);
-        // Todo:read data
-        uv_read_start((uv_stream_t*)cli->tcp_client, alloc_buffer, on_read);
+
+        add_node(lcllist, local);
+        
+        uv_read_start((uv_stream_t*)local->tcp_node, alloc_buffer, on_read);
     }
     else {
-        free_client(cli);
+        free_node(local);
     }
 }
 
@@ -30,7 +31,6 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 
 void on_read(uv_stream_t* tcp_client, ssize_t nread, const uv_buf_t* buf)
 {
-    extern ser* server;
     if (nread == 0) {
         // reading busy, continue and don't do anything
         free(buf->base);
@@ -45,9 +45,13 @@ void on_read(uv_stream_t* tcp_client, ssize_t nread, const uv_buf_t* buf)
         uv_shutdown_t* req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
         uv_shutdown(req, tcp_client, after_shutdown);
     }
+
+    //
 }
 
 void after_shutdown(uv_shutdown_t* req, int status)
 {
-    uv_close((uv_handle_t*)req->handle, on_close);
+    extern GList* lcllist;
+    int index = getnodeIndex(lcllist, (uv_tcp_t*)req->handle);
+    pop_node(lcllist, index);
 }

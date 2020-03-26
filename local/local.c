@@ -12,7 +12,20 @@ struct arg_str* ip;
 struct arg_int *port;
 struct arg_end *end;
 
-ser* localss = NULL;
+GList* lcllist = NULL;
+uv_tcp_t* lcltcp = NULL;
+
+uv_tcp_t* create_lcltcp() {
+    uv_tcp_t* tcp = malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(uv_default_loop(), tcp);
+    return tcp;
+}
+
+void free_lcltcp(uv_tcp_t* lcltcp) {
+    uv_close((uv_handle_t*)lcltcp, on_close);
+    lcltcp = NULL;
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -37,15 +50,15 @@ int main(int argc, char* argv[]) {
     const char* hostip = ip->sval[0];
     short hostport = *(port->ival);
 
-    localss = create_server();
-
     struct sockaddr_in seraddr;
     uv_ip4_addr(hostip, hostport, &seraddr);
 
-    uv_tcp_bind(localss->tcp_server, (const struct sockaddr*)&seraddr, 0);
-    uv_listen((uv_stream_t*)localss->tcp_server, 128, on_connection);
+    lcltcp = create_lcltcp();
 
-    clear_server(localss);
+    uv_tcp_bind(lcltcp, (const struct sockaddr*)&seraddr, 0);
+    uv_listen((uv_stream_t*)lcltcp, 1280, on_connection);
+
+    free_lcltcp(lcltcp);
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return 0;
 

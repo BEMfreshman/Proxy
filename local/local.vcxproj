@@ -154,8 +154,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="local.cpp" />
-    <ClCompile Include="localuti.cpp" />
+    <ClCompile Include="local.c" />
+    <ClCompile Include="localuti.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="localuti.h" />

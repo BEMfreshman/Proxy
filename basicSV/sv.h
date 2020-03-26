@@ -5,33 +5,40 @@
 #include <uv.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <list>
+#include <glib.h>
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
 
-using std::list;
+typedef struct ctx_ {
+    SSL* ssl;
+    SSL_CTX* ssl_ctx;
+    BIO* bio_read;
+    BIO* bio_write;
+} ctx;
 
-struct client {
-    uv_tcp_t* tcp_client;
 
-};
+typedef struct node_ {
+    uv_tcp_t* tcp_node;
+    ctx* nd_ssl_ctx;
 
-struct ser {
-    uv_tcp_t* tcp_server;
-    list<client*>  cli_list;
-};
+}node;
 
 void on_close(uv_handle_t* handle);
 
-client* create_client();
-void add_client(ser* server,client* cli);
-client* get_client(ser* server, size_t index);
-void pop_client(ser* server, int index);
-void pop_client2(ser* server, client* cli);
-void free_client(client* cli);
+static GList* g_node = NULL;
 
-client* getclient(ser* server, uv_tcp_t* tcp_client);
+node* create_node();
+void add_node(GList* nodelist,node* cli);
+node* get_node(GList* nodelist, size_t index);
+void pop_node(GList* nodelist, int index);
+void pop_node2(GList* nodelist, node* cli);
+void free_node(node* cli);
 
+int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_node);
+node* getnode(GList* nodelist, uv_tcp_t* tcp_node);
 
-void clear_server(ser* server);
-ser*  create_server();
-void free_server(ser* server);
-void clear_cli_list(ser* server);
+void free_nodelist(GList* nodelist);
+void clear_cli_list(GList* nodelist);
+
+ctx* create_ctx();
+void free_ctx(ctx* node_ctx);

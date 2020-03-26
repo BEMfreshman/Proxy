@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="local.cpp">
+    <ClCompile Include="localuti.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="localuti.cpp">
+    <ClCompile Include="local.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
