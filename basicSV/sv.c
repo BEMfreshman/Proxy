@@ -95,10 +95,5 @@ void on_close(uv_handle_t* handle){
 
 void free_nodelist(GList* nodelist){
     if (nodelist == NULL) return;
-    clear_cli_list(nodelist);
-}
-
-
-void clear_cli_list(GList* nodelist) {
     g_list_foreach(nodelist, free_node, NULL);
 }

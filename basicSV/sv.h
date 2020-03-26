@@ -38,7 +38,6 @@ int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_node);
 node* getnode(GList* nodelist, uv_tcp_t* tcp_node);
 
 void free_nodelist(GList* nodelist);
-void clear_cli_list(GList* nodelist);
 
 ctx* create_ctx();
 void free_ctx(ctx* node_ctx);
