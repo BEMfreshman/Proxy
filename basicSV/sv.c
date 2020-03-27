@@ -31,9 +31,16 @@ void free_ctx(ctx* node_ctx) {
 node* create_node()
 {
     node* nd = (node*)malloc(sizeof(node));
-    nd->tcp_node = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
-    uv_tcp_init(uv_default_loop(), nd->tcp_node);
 
+    nd->tcp_local = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(uv_default_loop(), nd->tcp_local);
+
+    nd->tcp_remote = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(uv_default_loop(), nd->tcp_remote);
+
+    profile *pf = (profile*)malloc(sizeof(profile));
+    nd->pf = pf;
+    
     nd->nd_ssl_ctx = create_ctx();
 
     return nd;
@@ -41,26 +48,40 @@ node* create_node()
 
 void free_node(node* nd) {
     if (nd == NULL) return;
-    uv_close((uv_handle_t*)nd->tcp_node, on_close);
+    uv_close((uv_handle_t*)nd->tcp_local, on_close);
+    uv_close((uv_handle_t*)nd->tcp_remote, on_close);
 
     free_ctx(nd->nd_ssl_ctx);
+    free(nd->pf);
 
     free(nd);
 }
 
-int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_node) {
-    if (nodelist == NULL || tcp_node == NULL) return -1;
+int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_local) {
+    if (nodelist == NULL || tcp_local == NULL) return -1;
 
-    node* nd = getnode(nodelist, tcp_node);
+    node* nd = getnode(nodelist, tcp_local);
     if (nd == NULL) return -1;
     return g_list_index(nodelist, nd);
 }
 
-node* getnode(GList* nodelist, uv_tcp_t* tcp_node) {
+node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local) {
     if (nodelist == NULL) return NULL;
     GList* nd = NULL;
     while ((nd = g_list_next(nodelist)) != NULL) {
-        if (((node*)nd->data)->tcp_node == tcp_node) {
+        if (((node*)nd->data)->tcp_local == tcp_local) {
+            return nd->data;
+        }
+    }
+
+    return NULL;
+}
+
+node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
+    if (nodelist == NULL) return NULL;
+    GList* nd = NULL;
+    while ((nd = g_list_next(nodelist)) != NULL) {
+        if (((node*)nd->data)->tcp_remote == tcp_remote) {
             return nd->data;
         }
     }
