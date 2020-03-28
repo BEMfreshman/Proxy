@@ -19,7 +19,6 @@ typedef struct ctx_ {
 } ctx;
 
 typedef struct profile_ {
-    char lclhost[MAXLINE];
     short lclport;
 
     char remotehost[MAXLINE];
@@ -29,10 +28,21 @@ typedef struct profile_ {
 
 } profile;
 
+typedef enum s5stat_ {
+    REGISTER,
+    CONNECT,
+    TRANSFER,
+    INVALID
+} s5stat;
+
 
 typedef struct node_ {
     uv_tcp_t* tcp_local;
     uv_tcp_t* tcp_remote;
+
+    uv_write_t* wrtreq;
+
+    s5stat status;
 
     profile* pf;
 
@@ -45,13 +55,14 @@ void on_close(uv_handle_t* handle);
 static GList* g_node = NULL;
 
 node* create_node();
-void add_node(GList* nodelist,node* cli);
+void add_node(GList** nodelist,node* cli);
 node* get_node(GList* nodelist, size_t index);
-void pop_node(GList* nodelist, int index);
-void pop_node2(GList* nodelist, node* cli);
+void pop_node(GList** nodelist, int index);
+void pop_node2(GList** nodelist, node* cli);
 void free_node(node* cli);
 
-int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_node);
+int getnodeIndexbyll(GList* nodelist, uv_tcp_t* tcp_local);
+int getnodeIndexbyrm(GList* nodelist, uv_tcp_t* tcp_remote);
 node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local);
 node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote);
 

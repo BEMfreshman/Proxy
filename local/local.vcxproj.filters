@@ -21,9 +21,15 @@
     <ClCompile Include="local.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="socksh.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="localuti.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="socksh.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

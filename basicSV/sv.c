@@ -38,10 +38,14 @@ node* create_node()
     nd->tcp_remote = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
     uv_tcp_init(uv_default_loop(), nd->tcp_remote);
 
+    nd->wrtreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+
     profile *pf = (profile*)malloc(sizeof(profile));
     nd->pf = pf;
     
     nd->nd_ssl_ctx = create_ctx();
+
+    nd->status = REGISTER;
 
     return nd;
 }
@@ -51,16 +55,26 @@ void free_node(node* nd) {
     uv_close((uv_handle_t*)nd->tcp_local, on_close);
     uv_close((uv_handle_t*)nd->tcp_remote, on_close);
 
+    free(nd->wrtreq);
+
     free_ctx(nd->nd_ssl_ctx);
     free(nd->pf);
 
     free(nd);
 }
 
-int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_local) {
+int getnodeIndexbyll(GList* nodelist, uv_tcp_t* tcp_local) {
     if (nodelist == NULL || tcp_local == NULL) return -1;
 
-    node* nd = getnode(nodelist, tcp_local);
+    node* nd = getnodebyll(nodelist, tcp_local);
+    if (nd == NULL) return -1;
+    return g_list_index(nodelist, nd);
+}
+
+int getnodeIndexbyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
+    if (nodelist == NULL || tcp_remote == NULL) return -1;
+
+    node* nd = getnodebyrm(nodelist, tcp_remote);
     if (nd == NULL) return -1;
     return g_list_index(nodelist, nd);
 }
@@ -68,6 +82,18 @@ int getnodeIndex(GList* nodelist, uv_tcp_t* tcp_local) {
 node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local) {
     if (nodelist == NULL) return NULL;
     GList* nd = NULL;
+
+    if (nodelist->prev == NULL && nodelist->next == NULL) {
+        nd = nodelist;
+        if (((node*)nd->data)->tcp_local == tcp_local) {
+            return nd->data;
+        }
+        else {
+            return NULL;
+        }
+    }
+
+
     while ((nd = g_list_next(nodelist)) != NULL) {
         if (((node*)nd->data)->tcp_local == tcp_local) {
             return nd->data;
@@ -80,6 +106,17 @@ node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local) {
 node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
     if (nodelist == NULL) return NULL;
     GList* nd = NULL;
+
+    if (nodelist->prev == NULL && nodelist->next == NULL) {
+        nd = nodelist;
+        if (((node*)nd->data)->tcp_remote == tcp_remote) {
+            return nd->data;
+        }
+        else {
+            return NULL;
+        }
+    }
+
     while ((nd = g_list_next(nodelist)) != NULL) {
         if (((node*)nd->data)->tcp_remote == tcp_remote) {
             return nd->data;
@@ -89,24 +126,24 @@ node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
     return NULL;
 }
 
-void add_node(GList* nodelist, node* nd) {
-    g_list_append(nodelist, nd);
+void add_node(GList** nodelist, node* nd) {
+    *nodelist = g_list_append(*nodelist, nd);
 }
 
 node* get_node(GList* nodelist, size_t index) {
     return g_list_nth_data(nodelist, index);
 }
 
-void pop_node(GList* nodelist, int index) {
-    node* nd = get_node(nodelist, index);
+void pop_node(GList** nodelist, int index) {
+    node* nd = get_node(*nodelist, index);
     if (nd == NULL) return;
-    g_list_remove(nodelist, nd);
+    *nodelist = g_list_remove(*nodelist, nd);
 }
 
-void pop_node2(GList* nodelist, node* nd) {
+void pop_node2(GList** nodelist, node* nd) {
 
     if (nd == NULL) return;
-    g_list_remove(nodelist, nd);
+    *nodelist = g_list_remove(*nodelist, nd);
 }
 
 void on_close(uv_handle_t* handle){
