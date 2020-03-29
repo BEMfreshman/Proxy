@@ -43,6 +43,7 @@ typedef struct node_ {
     uv_write_t* wrtreq;
 
     s5stat status;
+    int read_stat;
 
     profile* pf;
 
@@ -55,10 +56,10 @@ void on_close(uv_handle_t* handle);
 static GList* g_node = NULL;
 
 node* create_node();
-void add_node(GList** nodelist,node* cli);
+GList* add_node(GList* nodelist,node* cli);
 node* get_node(GList* nodelist, size_t index);
-void pop_node(GList** nodelist, int index);
-void pop_node2(GList** nodelist, node* cli);
+GList* pop_node(GList* nodelist, int index);
+GList* pop_node2(GList* nodelist, node* cli);
 void free_node(node* cli);
 
 int getnodeIndexbyll(GList* nodelist, uv_tcp_t* tcp_local);
@@ -66,7 +67,8 @@ int getnodeIndexbyrm(GList* nodelist, uv_tcp_t* tcp_remote);
 node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local);
 node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote);
 
-void free_nodelist(GList* nodelist);
+void free_nodelist(GList** nodelist);
+GList* close_node_by_readstat(GList* nodelist);
 
 ctx* create_ctx();
 void free_ctx(ctx* node_ctx);

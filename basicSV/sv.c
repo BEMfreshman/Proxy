@@ -39,6 +39,7 @@ node* create_node()
     uv_tcp_init(uv_default_loop(), nd->tcp_remote);
 
     nd->wrtreq = (uv_write_t*)malloc(sizeof(uv_write_t));
+    nd->read_stat = 0;
 
     profile *pf = (profile*)malloc(sizeof(profile));
     nd->pf = pf;
@@ -93,8 +94,9 @@ node* getnodebyll(GList* nodelist, uv_tcp_t* tcp_local) {
         }
     }
 
+    nd = g_list_first(nodelist);
 
-    while ((nd = g_list_next(nodelist)) != NULL) {
+    while ((nd = g_list_next(nd)) != NULL) {
         if (((node*)nd->data)->tcp_local == tcp_local) {
             return nd->data;
         }
@@ -126,24 +128,23 @@ node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
     return NULL;
 }
 
-void add_node(GList** nodelist, node* nd) {
-    *nodelist = g_list_append(*nodelist, nd);
+GList* add_node(GList* nodelist, node* nd) {
+    return g_list_append(nodelist, nd);
 }
 
 node* get_node(GList* nodelist, size_t index) {
     return g_list_nth_data(nodelist, index);
 }
 
-void pop_node(GList** nodelist, int index) {
-    node* nd = get_node(*nodelist, index);
-    if (nd == NULL) return;
-    *nodelist = g_list_remove(*nodelist, nd);
+GList* pop_node(GList* nodelist, int index) {
+    node* nd = get_node(nodelist, index);
+    if (nd == NULL) return nodelist;
+    return g_list_remove(nodelist, nd);
 }
 
-void pop_node2(GList** nodelist, node* nd) {
-
-    if (nd == NULL) return;
-    *nodelist = g_list_remove(*nodelist, nd);
+GList* pop_node2(GList* nodelist, node* nd) {
+    if (nd == NULL) return nodelist;
+    return g_list_remove(nodelist, nd);
 }
 
 void on_close(uv_handle_t* handle){
@@ -151,7 +152,29 @@ void on_close(uv_handle_t* handle){
 }
 
 
-void free_nodelist(GList* nodelist){
-    if (nodelist == NULL) return;
-    g_list_foreach(nodelist, free_node, NULL);
+void free_nodelist(GList** nodelist){
+    if (*nodelist == NULL) return;
+    g_list_foreach(*nodelist, (GFunc)free_node, NULL);
+}
+
+
+GList* close_node_by_readstat(GList* nodelist)
+{
+    if (nodelist == NULL) return nodelist;
+    for (GList* p = nodelist; p != NULL; p = p->next) {
+        node* nd = (node*)p->data;
+        if (nd->read_stat == UV_EOF) {
+            GList* prev = p->prev;
+            GList* next = p->next;
+            if (prev != NULL) {
+                p->prev->next = p->next;
+            }
+            if (next != NULL) {
+                p->next->prev = p->prev;
+            }
+            free_node(nd);
+            p = prev;
+        }
+    }
+    return nodelist;
 }

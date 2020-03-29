@@ -9,3 +9,5 @@ void after_shutdown(uv_shutdown_t* req, int status);
 
 void after_write(uv_write_t* req, int status);
 void free_write_buf(uv_write_t* req);
+
+void close_connection_by_timer(uv_timer_t* handle);

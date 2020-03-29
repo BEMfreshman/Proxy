@@ -4,6 +4,11 @@
 
 extern GList* lcllist;
 
+void close_connection_by_timer(uv_timer_t* handle)
+{
+    lcllist = close_node_by_readstat(lcllist);
+}
+
 void on_connection(uv_stream_t* tcp_lcl_ser, int status)
 {
 
@@ -19,7 +24,7 @@ void on_connection(uv_stream_t* tcp_lcl_ser, int status)
     if (uv_accept(tcp_lcl_ser, (uv_stream_t*)local->tcp_local) == 0) {
         // connect to new client has been built
 
-        add_node(&lcllist, local);
+        lcllist = add_node(lcllist, local);
         
         uv_read_start((uv_stream_t*)local->tcp_local, alloc_buffer, on_read);
     }
@@ -38,8 +43,22 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 
 void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
 {
+    node* nd = getnodebyll(lcllist, (uv_tcp_t*)tcp_local);
+    if (nd == NULL || nd->read_stat == UV_EOF) {
+        free(buf->base);
+        return;
+    }
+
+    nd->read_stat = nread;
+
     if (nread == 0) {
         // reading busy, continue and don't do anything
+        free(buf->base);
+        return;
+    }
+
+    if (nread == UV_EOF) {
+        g_message("recv eof, tcp connection will be closed");
         free(buf->base);
         return;
     }
@@ -53,21 +72,17 @@ void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
         uv_shutdown(req, tcp_local, after_shutdown);
     }
 
-    node* nd = getnodebyll(lcllist, (uv_tcp_t*)tcp_local);
-    if (nd == NULL) {
-        free(buf->base);
-    }
-
     // sock5 shakehands
     if (nd->status != TRANSFER) {
         shakeshands(nd, buf);
+        free(buf->base);
     }
     else {
         // shakeshands over
         // do something
     }
 
-    uv_read_start((uv_stream_t*)nd->tcp_local, alloc_buffer, on_read);
+//    uv_read_start((uv_stream_t*)nd->tcp_local, alloc_buffer, on_read);
 }
 
 void after_write(uv_write_t* req, int status) {
@@ -82,5 +97,5 @@ void free_write_buf(uv_write_t* req) {
 void after_shutdown(uv_shutdown_t* req, int status)
 {
     int index = getnodeIndexbyll(lcllist, (uv_tcp_t*)req->handle);
-    pop_node(&lcllist, index);
+    lcllist = pop_node(lcllist, index);
 }
