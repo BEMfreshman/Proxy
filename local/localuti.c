@@ -74,7 +74,7 @@ void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
 
     // sock5 shakehands
     if (nd->status != TRANSFER) {
-        shakeshands(nd, buf);
+        shakes_hands(nd, buf,nread);
         free(buf->base);
     }
     else {
