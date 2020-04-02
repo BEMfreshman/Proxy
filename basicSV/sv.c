@@ -44,7 +44,7 @@ node* create_node()
     profile *pf = (profile*)malloc(sizeof(profile));
     nd->pf = pf;
     
-    nd->nd_ssl_ctx = create_ctx();
+ //   nd->nd_ssl_ctx = create_ctx();
 
     nd->status = REGISTER;
 
@@ -58,7 +58,7 @@ void free_node(node* nd) {
 
     free(nd->wrtreq);
 
-    free_ctx(nd->nd_ssl_ctx);
+//    free_ctx(nd->nd_ssl_ctx);
     free(nd->pf);
 
     free(nd);

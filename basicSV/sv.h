@@ -47,7 +47,7 @@ typedef struct node_ {
 
     profile* pf;
 
-    ctx* nd_ssl_ctx;
+//    ctx* nd_ssl_ctx;
 
 }node;
 

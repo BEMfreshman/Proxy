@@ -49,12 +49,12 @@ void parse_socks5_mess(node* nd, const uv_buf_t* buf, size_t buf_len)
         nd->wrtreq->write_buffer.base[1] = 0x00;     // SUCCESS CONNECT
         nd->wrtreq->write_buffer.base[2] = 0x00;
         nd->wrtreq->write_buffer.base[3] = buf->base[3];   //addr type
+
+        for (int i = 4; i < 10; i++) {
+            nd->wrtreq->write_buffer.base[i] = 0x00;
+        }
         
-        size_t iplen = strlen(nd->pf->remotehost);
-        memcpy((void*)nd->wrtreq->write_buffer.base[4], (void*)nd->pf->remotehost, iplen);
-        memcpy((void*)nd->wrtreq->write_buffer.base[4 + iplen], (void*)nd->pf->remoteport, 2);
-        
-        nd->wrtreq->write_buffer.len = 4 + iplen + 2;
+        nd->wrtreq->write_buffer.len = 10;
         nd->status = TRANSFER;
     }
 }

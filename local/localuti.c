@@ -3,6 +3,7 @@
 #include "socksh.h"
 
 extern GList* lcllist;
+extern profile* pf;
 
 void close_connection_by_timer(uv_timer_t* handle)
 {
@@ -19,7 +20,7 @@ void on_connection(uv_stream_t* tcp_lcl_ser, int status)
     }
 
     node* local = create_node();
-//    uv_stream_t* tcp_lcl_cli = malloc(sizeof(uv_stream_t));
+    memcpy(local->pf, pf,sizeof(*pf));
 
     if (uv_accept(tcp_lcl_ser, (uv_stream_t*)local->tcp_local) == 0) {
         // connect to new client has been built
@@ -65,11 +66,13 @@ void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
 
     if (nread < 0) {
         //some error take place
-        g_error("Error message: %s", uv_strerror(nread));
+        
         free(buf->base);
 
         uv_shutdown_t* req = (uv_shutdown_t*)malloc(sizeof(uv_shutdown_t));
         uv_shutdown(req, tcp_local, after_shutdown);
+        g_error("Error message: %s", uv_strerror(nread));
+        return;
     }
 
     // sock5 shakehands
@@ -78,7 +81,7 @@ void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
         free(buf->base);
     }
     else {
-        // shakeshands over
+        printf("Good\n");
         // do something
     }
 
