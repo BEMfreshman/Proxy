@@ -4,13 +4,18 @@ ctx* create_ctx()
 {
     ctx* re = malloc(sizeof(ctx));
 
-    re->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-    re->ssl = SSL_new(re->ssl_ctx);
+    re->tcp_remote = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
+    uv_tcp_init(uv_default_loop(), re->tcp_remote);
 
-    re->bio_read = BIO_new(BIO_s_mem());
-    re->bio_write = BIO_new(BIO_s_mem());
+    mbedtls_net_init(&re->remote_fd);
+    mbedtls_ssl_init(&re->ssl);
+    mbedtls_ssl_config_init(&re->conf);
+    mbedtls_x509_crt_init(&re->cacert);
+    mbedtls_ctr_drbg_init(&re->ctr_drbg);
+    mbedtls_entropy_init(&re->entropy);
 
-    SSL_set_bio(re->ssl, re->bio_read, re->bio_write);
+    mbedtls_aes_init(&re->aes_ctx);
+    mbedtls_md_init(&re->sha_ctx);
 
     return re;
 }
@@ -19,11 +24,18 @@ void free_ctx(ctx* node_ctx) {
     
     if (node_ctx == NULL) return;
 
-    SSL_free(node_ctx->ssl);
-    SSL_CTX_free(node_ctx->ssl_ctx);
+    uv_close((uv_handle_t*)node_ctx->tcp_remote, on_close);
 
-    BIO_free(node_ctx->bio_read);
-    BIO_free(node_ctx->bio_write);
+    mbedtls_net_free(&node_ctx->remote_fd);
+    mbedtls_x509_crt_free(&node_ctx->cacert);
+    mbedtls_ssl_free(&node_ctx->ssl);
+    mbedtls_ssl_config_free(&node_ctx->conf);
+    mbedtls_ctr_drbg_free(&node_ctx->ctr_drbg);
+    mbedtls_entropy_free(&node_ctx->entropy);
+
+    mbedtls_aes_free(&node_ctx->aes_ctx);
+    mbedtls_md_free(&node_ctx->sha_ctx);
+
     free(node_ctx);
 }
 
@@ -35,18 +47,15 @@ node* create_node()
     nd->tcp_local = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
     uv_tcp_init(uv_default_loop(), nd->tcp_local);
 
-    nd->tcp_remote = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
-    uv_tcp_init(uv_default_loop(), nd->tcp_remote);
-
     nd->wrtreq = (uv_write_t*)malloc(sizeof(uv_write_t));
     nd->read_stat = 0;
 
     profile *pf = (profile*)malloc(sizeof(profile));
     nd->pf = pf;
     
- //   nd->nd_ssl_ctx = create_ctx();
+    nd->nd_ssl_ctx = create_ctx();
 
-    nd->status = REGISTER;
+    nd->s5_status = REGISTER;
 
     return nd;
 }
@@ -54,11 +63,14 @@ node* create_node()
 void free_node(node* nd) {
     if (nd == NULL) return;
     uv_close((uv_handle_t*)nd->tcp_local, on_close);
-    uv_close((uv_handle_t*)nd->tcp_remote, on_close);
 
     free(nd->wrtreq);
 
-//    free_ctx(nd->nd_ssl_ctx);
+    if (nd->nd_ssl_ctx == NULL) {
+        free_ctx(nd->nd_ssl_ctx);
+        nd->nd_ssl_ctx = NULL;
+    }
+    
     free(nd->pf);
 
     free(nd);
@@ -111,7 +123,7 @@ node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
 
     if (nodelist->prev == NULL && nodelist->next == NULL) {
         nd = nodelist;
-        if (((node*)nd->data)->tcp_remote == tcp_remote) {
+        if (((node*)nd->data)->nd_ssl_ctx->tcp_remote == tcp_remote) {
             return nd->data;
         }
         else {
@@ -120,7 +132,7 @@ node* getnodebyrm(GList* nodelist, uv_tcp_t* tcp_remote) {
     }
 
     while ((nd = g_list_next(nodelist)) != NULL) {
-        if (((node*)nd->data)->tcp_remote == tcp_remote) {
+        if (((node*)nd->data)->nd_ssl_ctx->tcp_remote == tcp_remote) {
             return nd->data;
         }
     }

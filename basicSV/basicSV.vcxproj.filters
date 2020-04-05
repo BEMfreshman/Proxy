@@ -18,9 +18,15 @@
     <ClInclude Include="sv.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="uv_mbedtls.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sv.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="uv_mbedtls.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

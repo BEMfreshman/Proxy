@@ -129,9 +129,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="sv.c" />
+    <ClCompile Include="uv_mbedtls.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sv.h" />
+    <ClInclude Include="uv_mbedtls.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -144,6 +144,10 @@ int main(int argc, char* argv[]) {
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, bOptlen);
 #endif
 
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+
     uv_tcp_bind(lcltcp, (const struct sockaddr*)&localaddr, 0);
     uv_listen((uv_stream_t*)lcltcp, 1280, on_connection);
 

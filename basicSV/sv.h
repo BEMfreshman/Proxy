@@ -6,16 +6,31 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <glib.h>
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
+
+#include <mbedtls/ssl.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/error.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 
 #define MAXLINE 256
 
 typedef struct ctx_ {
-    SSL* ssl;
-    SSL_CTX* ssl_ctx;
-    BIO* bio_read;
-    BIO* bio_write;
+
+    // https session component
+    uv_tcp_t* tcp_remote;
+
+    mbedtls_net_context remote_fd;
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_context ssl;
+    mbedtls_ssl_config conf;
+    mbedtls_x509_crt cacert;
+
+    // encryption component
+    mbedtls_aes_context aes_ctx;
+    mbedtls_md_context_t sha_ctx;
+
 } ctx;
 
 typedef struct profile_ {
@@ -35,19 +50,24 @@ typedef enum s5stat_ {
     INVALID
 } s5stat;
 
+typedef enum sslstat_ {
+
+} sslstat;
+
 
 typedef struct node_ {
     uv_tcp_t* tcp_local;
-    uv_tcp_t* tcp_remote;
-
+ 
     uv_write_t* wrtreq;
 
-    s5stat status;
+    s5stat s5_status;
+    sslstat ssl_status;
+
     int read_stat;
 
     profile* pf;
 
-//    ctx* nd_ssl_ctx;
+    ctx* nd_ssl_ctx;
 
 }node;
 

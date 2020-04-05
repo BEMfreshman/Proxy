@@ -76,13 +76,14 @@ void on_read(uv_stream_t* tcp_local, ssize_t nread, const uv_buf_t* buf)
     }
 
     // sock5 shakehands
-    if (nd->status != TRANSFER) {
-        shakes_hands(nd, buf,nread);
+    if (nd->s5_status != TRANSFER) {
+        s5_shakes_hands(nd, buf,nread);
         free(buf->base);
     }
     else {
-        printf("Good\n");
-        // do something
+        // ssl connect to remote proxy server and send message
+
+
     }
 
 //    uv_read_start((uv_stream_t*)nd->tcp_local, alloc_buffer, on_read);
